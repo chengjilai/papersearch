@@ -160,13 +160,19 @@ func selectProviders(req string) (selected []provider, skipped []string) {
 }
 
 func haveKey(name string) bool {
-	for _, k := range []string{
-		"PAPERSEARCH_CORE_KEY", "PAPERSEARCH_ADS_TOKEN",
-		"PAPERSEARCH_LENS_KEY", "PAPERSEARCH_SPRINGER_KEY", "PAPERSEARCH_IEEE_KEY",
-	} {
-		if os.Getenv(k) != "" {
-			return true
-		}
+	switch name {
+	case "core":
+		return keyCORE() != ""
+	case "ads":
+		return keyADS() != ""
+	case "lens":
+		return keyLens() != ""
+	case "springer":
+		return keySpringer() != ""
+	case "ieee":
+		return keyIEEE() != ""
+	case "gscholar":
+		return keySerpAPI() != ""
 	}
 	return false
 }
@@ -174,7 +180,7 @@ func haveKey(name string) bool {
 func providerNameList() []string {
 	names := []string{"arxiv", "crossref", "openalex", "scholar", "pubmed",
 		"europepmc", "dblp", "datacite", "doaj", "hal", "inspire", "zenodo",
-		"core", "ads", "lens", "springer", "ieee"}
+		"core", "ads", "lens", "springer", "ieee", "gscholar"}
 	sort.Strings(names)
 	return names
 }

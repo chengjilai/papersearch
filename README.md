@@ -1,6 +1,6 @@
 # papersearch
 
-Search scholarly literature across **17 APIs** — all free or key-gated (no paid
+Search scholarly literature across **18 APIs** — all free or key-gated (no paid
 subscriptions) — from one Go command, using only the standard library.
 
 ```
@@ -40,6 +40,7 @@ key, the tool prints `skipped: <name> (set the env key)` and continues.
 | `lens` | `PAPERSEARCH_LENS_KEY` | https://api.lens.org/scholarly/search (scholarly + patents) |
 | `springer` | `PAPERSEARCH_SPRINGER_KEY` | https://api.springernature.com/meta/v2/json |
 | `ieee` | `PAPERSEARCH_IEEE_KEY` | https://ieeexploreapi.ieee.org/api/v1/search/articles |
+| `gscholar` | `PAPERSEARCH_SERPAPI_KEY` | https://serpapi.com/search.json (engine=google_scholar; paid quota, key needed) |
 
 ### Not keyword-searchable (documented; free, no key)
 

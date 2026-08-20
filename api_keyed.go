@@ -20,6 +20,7 @@ var allKeyedProviders = []provider{
 	{name: "lens", label: "Lens.org (scholarly + patents)", keyed: true, search: keySearch(searchLens, keyLens)},
 	{name: "springer", label: "Springer Nature", keyed: true, search: keySearch(searchSpringer, keySpringer)},
 	{name: "ieee", label: "IEEE Xplore", keyed: true, search: keySearch(searchIEEE, keyIEEE)},
+	{name: "gscholar", label: "Google Scholar (via SerpAPI)", keyed: true, search: keySearch(searchGoogleScholar, keySerpAPI)},
 }
 
 // keyedProviders returns the subset of keyed providers whose env key is set.
@@ -41,6 +42,7 @@ func keySearch(fn func(string, int, int, string) ([]Result, error), getKey func(
 }
 
 func keyCORE() string     { return strings.TrimSpace(os.Getenv("PAPERSEARCH_CORE_KEY")) }
+func keySerpAPI() string  { return strings.TrimSpace(os.Getenv("PAPERSEARCH_SERPAPI_KEY")) }
 func keyADS() string      { return strings.TrimSpace(os.Getenv("PAPERSEARCH_ADS_TOKEN")) }
 func keyLens() string     { return strings.TrimSpace(os.Getenv("PAPERSEARCH_LENS_KEY")) }
 func keySpringer() string { return strings.TrimSpace(os.Getenv("PAPERSEARCH_SPRINGER_KEY")) }
