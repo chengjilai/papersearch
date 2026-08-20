@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const contactEmail = "papersearch@example.com" // crossref/openalex polite pool
+const contactEmail = "chengjilai@sjtu.edu.cn" // polite-pool identifier for Crossref/OpenAlex
 
 var httpClient = &http.Client{Timeout: 20 * time.Second}
 
