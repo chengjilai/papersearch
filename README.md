@@ -1,8 +1,25 @@
 ```sh
-papersearch "attention is all you need"
-papersearch -n 10 -since 2023 -json -api arxiv,openalex "multi-agent llm" | jq
-papersearch -api all "gravitational waves"
+go install github
 ```
+
+## Usage
+
+```
+papersearch [flags] "query"
+
+  -api string   comma-separated providers or 'all' (default: all free + keyed with keys)
+  -n int        results per provider (default 5, max 50)
+  -since int    only records from this year onward
+  -json         emit a JSON array (jq-friendly)
+  -dedupe       drop cross-provider duplicates by DOI / title (default true)
+  -timeout d    per-request timeout (default 20s)
+  -q            suppress per-provider error notes
+```
+
+Output is grouped per provider: title, authors, year, venue, citation count, URL.
+A failing provider (e.g. Semantic Scholar rate limits) prints a warning and is
+skipped.
+
 
 ## Providers
 
@@ -41,37 +58,13 @@ is skipped (`skipped: <name> (set the env key)`). Keys also fall back to
 | `ieee` | `PAPERSEARCH_IEEE_KEY` | https://ieeexploreapi.ieee.org/api/v1/search/articles |
 | `gscholar` | `PAPERSEARCH_SERPAPI_KEY` | https://serpapi.com/search.json (engine=google_scholar) — Google Scholar, since it has no API; paid quota |
 
-### Not keyword-searchable (documented only)
-
-Google Scholar (no official API), OpenCitations + Unpaywall (DOI lookup only),
-ORCID (author records).
-
-## Usage
-
-```
-papersearch [flags] "query"
-
-  -api string   comma-separated providers or 'all' (default: all 15 free)
-  -n int        results per provider (default 5, max 50)
-  -since int    only records from this year onward
-  -json         emit a JSON array (jq-friendly)
-  -dedupe       drop cross-provider duplicates by DOI / title (default true)
-  -timeout d    per-request timeout (default 20s)
-  -q            suppress per-provider error notes
-```
-
-Output is grouped per provider: title, authors, year, venue, citation count, URL.
-A failing provider (e.g. Semantic Scholar rate limits) prints a warning and is
-skipped.
-
-
 ## Design
 
 - 4 files: `main.go` (CLI), `providers.go` (one table row per API: auth kind +
   endpoint + record path + field extractor), `bespoke.go` (the 5 irregular
   providers: arXiv/OpenAIRE XML, PubMed two-step, DBLP quirks), `support.go`
   (HTTP + helpers).
-- Requests: 3 concurrent, one bounded retry (2s) on 429/5xx, 20s timeout,
+- Requests: one bounded retry (2s) on 429/5xx, 20s timeout,
   64 MiB cap, `mailto` for the Crossref/OpenAlex polite pools.
 - Duplicates across providers are collapsed by DOI (or title) for `-json`.
 - Parsers are hardened against inconsistent field types seen live (string-vs-

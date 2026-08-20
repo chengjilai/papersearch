@@ -28,8 +28,8 @@ func init() {
 
 func main() {
 	var (
-		apiList = flag.String("api", "arxiv,crossref,openalex,scholar,pubmed,europepmc,dblp,datacite,doaj,hal,inspire,zenodo,osf,openaire,dryad",
-			"comma-separated providers, or 'all'. Names: "+providerNames())
+		apiList = flag.String("api", "all",
+			"comma-separated providers, or 'all' (default: all free + keyed with keys present). Names: "+providerNames())
 		n       = flag.Int("n", 5, "max results per provider")
 		since   = flag.Int("since", 0, "only papers from this year onward")
 		timeout = flag.Duration("timeout", 20*time.Second, "per-request timeout")
