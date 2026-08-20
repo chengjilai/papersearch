@@ -11,20 +11,19 @@ import (
 	"time"
 )
 
-// Free (no-key) providers: the 9 explicit ones plus the 6 data-driven
-// docProviders registered in init() from api_rest.go.
-var freeProviders = []provider{
-	{name: "arxiv", label: "arXiv", search: searchArxiv},
-	{name: "scholar", label: "Semantic Scholar", search: searchScholar},
-	{name: "pubmed", label: "PubMed", search: searchPubMed},
-	{name: "dblp", label: "DBLP", search: searchDblp},
-	{name: "openaire", label: "OpenAIRE (EU research)", search: searchOpenAIRE},
-}
+// Registry built from the single allSpecs table in providers.go.
+var (
+	freeProviders     []provider
+	allKeyedProviders []provider // every keyed spec, gated by haveKey() at dispatch
+	allProviderNames  []string
+)
 
 func init() {
-	for _, d := range docProviders {
-		freeProviders = append(freeProviders, provider{name: d.name, label: d.label, search: docSearch(d)})
+	freeProviders, allKeyedProviders = buildRegistration()
+	for _, s := range allSpecs {
+		allProviderNames = append(allProviderNames, s.name)
 	}
+	sort.Strings(allProviderNames)
 }
 
 func main() {
@@ -167,37 +166,12 @@ func selectProviders(req string) (selected []provider, skipped []string) {
 	return selected, skipped
 }
 
-func haveKey(name string) bool {
-	switch name {
-	case "core":
-		return keyCORE() != ""
-	case "ads":
-		return keyADS() != ""
-	case "lens":
-		return keyLens() != ""
-	case "springer":
-		return keySpringer() != ""
-	case "ieee":
-		return keyIEEE() != ""
-	case "gscholar":
-		return keySerpAPI() != ""
-	}
-	return false
-}
+// haveKey reports whether a keyed provider's credential is resolvable.
+// (Credential names match provider names, so this is just keyOf != "").
+func haveKey(name string) bool { return keyOf(name) != "" }
 
-// providerNameList derives the sorted provider names from the registries
-// (single source of truth — no hardcoded duplicate list to keep in sync).
-func providerNameList() []string {
-	names := make([]string, 0, len(freeProviders)+len(allKeyedProviders))
-	for _, p := range freeProviders {
-		names = append(names, p.name)
-	}
-	for _, p := range allKeyedProviders {
-		names = append(names, p.name)
-	}
-	sort.Strings(names)
-	return names
-}
+// providerNameList returns the sorted names from the spec table (built in init).
+func providerNameList() []string { return allProviderNames }
 
 func providerNames() string {
 	return strings.Join(providerNameList(), ",")
