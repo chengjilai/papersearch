@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
+	"regexp"
 	"strings"
 )
 
@@ -59,19 +56,6 @@ var providerSecretFile = map[string]string{
 	"springer": "papersearch-springer-key",
 	"ieee":     "papersearch-ieee-key",
 	"gscholar": "papersearch-serpapi-key",
-}
-
-// keyOf reads the key for a provider: env var wins, then /run/secrets/<file>.
-func keyOf(name string) string {
-	if v := strings.TrimSpace(os.Getenv(providerEnvVar[name])); v != "" {
-		return v
-	}
-	if f, ok := providerSecretFile[name]; ok {
-		if b, err := os.ReadFile("/run/secrets/" + f); err == nil {
-			return strings.TrimSpace(string(b))
-		}
-	}
-	return ""
 }
 
 func keyCORE() string     { return keyOf("core") }
@@ -171,7 +155,7 @@ func searchADS(q string, n int, since int, key string) ([]Result, error) {
 		if len(d.Author) > 0 {
 			r.Authors = d.Author
 		}
-		if y, err := atoiSafe(d.Year); err == nil && y > 0 {
+		if y := parseYear(d.Year); y > 0 {
 			r.Year = y
 		}
 		if len(d.DOI) > 0 {
@@ -310,9 +294,7 @@ func searchSpringer(q string, n int, since int, key string) ([]Result, error) {
 			Abstract: r.Abstract,
 		}
 		if len(r.PublicationDate) >= 4 {
-			if y, err := atoiSafe(r.PublicationDate[:4]); err == nil {
-				res.Year = y
-			}
+			res.Year = parseYear(r.PublicationDate[:4])
 		}
 		for _, c := range r.Creators {
 			res.Authors = append(res.Authors, c.Creator)
@@ -379,46 +361,85 @@ func searchIEEE(q string, n int, since int, key string) ([]Result, error) {
 	return results, nil
 }
 
-// --- helpers ---
-func getRawWithBearer(endpoint, token string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", "papersearch/0.1 (mailto:"+contactEmail+")")
-	req.Header.Set("Authorization", "Bearer "+token)
-	return doReq(req)
+// Google Scholar via SerpAPI. The only way to query Scholar programmatically
+// without violating Google's ToS by scraping (SerpAPI runs the proxies for you).
+
+type serpResp struct {
+	OrganicResults []struct {
+		Title           string `json:"title"`
+		Link            string `json:"link"`
+		Snippet         string `json:"snippet"`
+		ResultID        string `json:"result_id"`
+		PublicationInfo struct {
+			Summary string `json:"summary"`
+			Authors []struct {
+				Name string `json:"name"`
+			} `json:"authors"`
+		} `json:"publication_info"`
+		InlineLinks struct {
+			CitedBy struct {
+				Total int `json:"total"`
+			} `json:"cited_by"`
+		} `json:"inline_links"`
+		Resources []struct {
+			Title string `json:"title"`
+			Link  string `json:"link"`
+		} `json:"resources"`
+	} `json:"organic_results"`
+	Error string `json:"error"`
 }
 
-func newPost(endpoint string, body []byte, token string) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", "papersearch/0.1 (mailto:"+contactEmail+")")
-	req.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	return req, nil
-}
+var serpYearRe = regexp.MustCompile(`\b(19|20)\d{2}\b`)
 
-func doReq(req *http.Request) ([]byte, error) {
-	resp, err := httpClient.Do(req)
-	if err != nil {
+func searchGoogleScholar(q string, n int, since int, key string) ([]Result, error) {
+	endpoint := "https://serpapi.com/search.json?engine=google_scholar&q=" +
+		qval(q) + "&num=" + itoa(n) + "&api_key=" + qval(key)
+
+	var resp serpResp
+	if err := getJSON(endpoint, &resp); err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(io.LimitReader(resp.Body, 64<<20)); err != nil {
-		return nil, err
+	if resp.Error != "" {
+		return nil, fmt.Errorf("serpapi: %s", resp.Error)
 	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		n := buf.Len()
-		if n > 300 {
-			n = 300
+
+	results := make([]Result, 0, len(resp.OrganicResults))
+	for _, r := range resp.OrganicResults {
+		res := Result{
+			Source:     "scholar",
+			Title:      r.Title,
+			Abstract:   r.Snippet,
+			URL:        r.Link,
+			Identifier: r.ResultID,
 		}
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, buf.String()[:n])
+		// Year usually embedded in publication_info.summary, e.g.
+		// "A Vaswani, N Shazeer, N Parmar… - Advances in neural …, 2017 - proceedings.neurips.cc"
+		for _, m := range serpYearRe.FindAllString(r.PublicationInfo.Summary, -1) {
+			if y := parseYear(m); y > 0 {
+				res.Year = y
+				break
+			}
+		}
+		for _, a := range r.PublicationInfo.Authors {
+			res.Authors = append(res.Authors, a.Name)
+		}
+		// Venue is the summary's last segment (the source website, e.g.
+		// "proceedings.neurips.cc"), or the segment just before the year.
+		parts := strings.Split(r.PublicationInfo.Summary, " - ")
+		if n := len(parts); n > 0 && parts[n-1] != "" && !serpYearRe.MatchString(parts[n-1]) {
+			res.Venue = parts[n-1]
+		} else {
+			for i, seg := range parts {
+				if serpYearRe.MatchString(seg) && i > 0 && res.Venue == "" {
+					res.Venue = parts[i-1]
+				}
+			}
+		}
+		res.Citations = r.InlineLinks.CitedBy.Total
+		if since > 0 && res.Year != 0 && res.Year < since {
+			continue
+		}
+		results = append(results, res)
 	}
-	return buf.Bytes(), nil
+	return results, nil
 }

@@ -180,10 +180,16 @@ func haveKey(name string) bool {
 	return false
 }
 
+// providerNameList derives the sorted provider names from the registries
+// (single source of truth — no hardcoded duplicate list to keep in sync).
 func providerNameList() []string {
-	names := []string{"arxiv", "crossref", "openalex", "scholar", "pubmed",
-		"europepmc", "dblp", "datacite", "doaj", "hal", "inspire", "zenodo",
-		"osf", "openaire", "dryad", "core", "ads", "lens", "springer", "ieee", "gscholar"}
+	names := make([]string, 0, len(freeProviders)+len(allKeyedProviders))
+	for _, p := range freeProviders {
+		names = append(names, p.name)
+	}
+	for _, p := range allKeyedProviders {
+		names = append(names, p.name)
+	}
 	sort.Strings(names)
 	return names
 }
