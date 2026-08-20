@@ -132,7 +132,7 @@ func searchADS(q string, n int, since int, key string) ([]Result, error) {
 	endpoint := "https://api.adsabs.harvard.edu/v1/search/query?q=" + qval(q) +
 		"&rows=" + itoa(n) + "&fl=title,author,year,doi,bibcode,citation_count,abstract"
 	if since > 0 {
-		endpoint += "&fq=year:[" + itoa(since) + "-01-01 TO *]"
+		endpoint += "&fq=" + qval("year:["+itoa(since)+" TO *]") // ADS year is an int field
 	}
 	body, err := getRawWithBearer(endpoint, key)
 	if err != nil {

@@ -67,6 +67,7 @@ Usage: papersearch [flags] "search phrase"
   -since int    only items from this year onward
   -timeout d    per-request timeout (default 20s)
   -json         emit JSON array of records (jq-friendly)
+  -dedupe       collapse cross-provider duplicates by DOI / normalized title (default true)
   -q            suppress per-provider error notes
 ```
 
@@ -86,7 +87,8 @@ go build -o papersearch .
 - Zero external dependencies; `encoding/json`, `encoding/xml`, `net/http` only.
 - Requests are polite: a `User-Agent` identifying the tool, a `mailto` param for
   the Crossref/OpenAlex polite pools, at most 3 concurrent outbound requests,
-  20s per-request timeout, and a 64 MiB response cap.
+  one bounded retry (2s backoff) on transient 429/5xx, 20s per-request timeout,
+  and a 64 MiB response cap.
 - Search phrases are used as-is per provider; each provider's own relevance
   ranking is preserved (results are grouped by source, not merged).
 - All JSON shapes were verified against live API responses in Aug 2026; several

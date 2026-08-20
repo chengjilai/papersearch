@@ -40,30 +40,56 @@ type provider struct {
 
 var httpClient = &http.Client{Timeout: 20 * time.Second}
 
-// getRaw issues an authenticated GET and returns the body (non-2xx -> error).
+// retryCodes are transient failures worth one bounded retry (429 trad, 5xx overloads).
+func retryCode(code int) bool {
+	return code == 429 || code == 500 || code == 502 || code == 503 || code == 504
+}
+
+// doHTTP sends req, retrying up to retries times (with backoff) on transient
+// failures. Replays the request body only via Clone (nil body for GETs; the
+// POST callers pass retries=0 since their body is consumed once).
+func doHTTP(req *http.Request, retries int) ([]byte, error) {
+	backoff := []time.Duration{2 * time.Second, 4 * time.Second}
+	for attempt := 0; ; attempt++ {
+		r := req
+		if attempt > 0 {
+			r = req.Clone(req.Context())
+		}
+		resp, err := httpClient.Do(r)
+		if err != nil && attempt < retries {
+			time.Sleep(backoff[attempt])
+			continue
+		}
+		if err == nil {
+			body, rerr := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
+			resp.Body.Close()
+			if rerr != nil {
+				return nil, rerr
+			}
+			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				return body, nil
+			}
+			if attempt < retries && retryCode(resp.StatusCode) {
+				time.Sleep(backoff[attempt])
+				continue
+			}
+			msg := strings.TrimSpace(string(body))
+			if len(msg) > 300 {
+				msg = msg[:300]
+			}
+			return nil, fmt.Errorf("HTTP %d from %s: %s", resp.StatusCode, req.URL, msg)
+		}
+		return nil, err
+	}
+}
+
 func getRaw(endpoint string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "papersearch/0.1 (mailto:"+contactEmail+")")
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		msg := strings.TrimSpace(string(body))
-		if len(msg) > 300 {
-			msg = msg[:300]
-		}
-		return nil, fmt.Errorf("HTTP %d from %s: %s", resp.StatusCode, endpoint, msg)
-	}
-	return body, nil
+	return doHTTP(req, 1)
 }
 
 func getRawWithBearer(endpoint, token string) ([]byte, error) {
@@ -73,7 +99,7 @@ func getRawWithBearer(endpoint, token string) ([]byte, error) {
 	}
 	req.Header.Set("User-Agent", "papersearch/0.1 (mailto:"+contactEmail+")")
 	req.Header.Set("Authorization", "Bearer "+token)
-	return doReq(req)
+	return doHTTP(req, 1)
 }
 
 func newPost(endpoint string, body []byte, token string) (*http.Request, error) {
@@ -90,23 +116,7 @@ func newPost(endpoint string, body []byte, token string) (*http.Request, error) 
 }
 
 func doReq(req *http.Request) ([]byte, error) {
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(io.LimitReader(resp.Body, 64<<20)); err != nil {
-		return nil, err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		n := buf.Len()
-		if n > 300 {
-			n = 300
-		}
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, buf.String()[:n])
-	}
-	return buf.Bytes(), nil
+	return doHTTP(req, 0) // POST bodies aren't replayable — no retry
 }
 
 func getJSON(endpoint string, out any) error {
@@ -225,12 +235,12 @@ func fmtAuthors(a []string, max int) string {
 	}
 	var b strings.Builder
 	for i, name := range a {
+		if i == max {
+			b.WriteString(fmt.Sprintf("… +%d more", len(a)-max))
+			break
+		}
 		if i > 0 {
 			b.WriteString(", ")
-		}
-		if i == max {
-			b.WriteString(fmt.Sprintf("+%d more", len(a)-max))
-			break
 		}
 		b.WriteString(name)
 	}

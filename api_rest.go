@@ -230,7 +230,7 @@ func intv(raw json.RawMessage, p string) int   { return jint(at(raw, p)) }
 func each(raw json.RawMessage, p string, fn func(json.RawMessage)) {
 	arr := at(raw, p)
 	var items []json.RawMessage
-	if json.Unmarshal(arr, &items) == nil || len(arr) == 0 {
+	if json.Unmarshal(arr, &items) == nil {
 		for _, it := range items {
 			fn(it)
 		}

@@ -35,6 +35,7 @@ func main() {
 		since   = flag.Int("since", 0, "only papers from this year onward")
 		timeout = flag.Duration("timeout", 20*time.Second, "per-request timeout")
 		jsonOut = flag.Bool("json", false, "emit machine-readable JSON")
+		dedupe  = flag.Bool("dedupe", true, "drop cross-provider duplicates by DOI (or normalized title)")
 		quiet   = flag.Bool("q", false, "suppress per-provider error notes")
 	)
 	flag.Usage = func() {
@@ -107,6 +108,9 @@ func main() {
 	}
 
 	if *jsonOut {
+		if *dedupe {
+			all = dedupeResults(all)
+		}
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 		enc.Encode(all)
@@ -227,4 +231,32 @@ func printTable(provs []provider, results [][]Result, errors []error) {
 			}
 		}
 	}
+}
+
+// dedupeResults collapses records that describe the same artifact across
+// providers, keyed by lowercase DOI first, then by a normalized title.
+func dedupeResults(rs []Result) []Result {
+	type key struct{ doi, title string }
+	seen := make(map[key]bool, len(rs))
+	out := make([]Result, 0, len(rs))
+	for _, r := range rs {
+		k := key{doi: strings.ToLower(r.DOI)}
+		if k.doi == "" {
+			k.title = normalizeTitle(r.Title)
+		}
+		if k.doi == "" && k.title == "" {
+			out = append(out, r)
+			continue
+		}
+		if seen[k] {
+			continue
+		}
+		seen[k] = true
+		out = append(out, r)
+	}
+	return out
+}
+
+func normalizeTitle(s string) string {
+	return strings.Join(strings.Fields(strings.ToLower(s)), " ")
 }
