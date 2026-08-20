@@ -51,13 +51,25 @@ func keySearch(fn func(string, int, int, string) ([]Result, error), getKey func(
 	}
 }
 
-// keyOf reads the key for a provider: env var wins, then /run/secrets/<name>.
+// providerSecretFile maps provider name -> /run/secrets file name.
+var providerSecretFile = map[string]string{
+	"core":     "papersearch-core-key",
+	"ads":      "papersearch-ads-token",
+	"lens":     "papersearch-lens-key",
+	"springer": "papersearch-springer-key",
+	"ieee":     "papersearch-ieee-key",
+	"gscholar": "papersearch-serpapi-key",
+}
+
+// keyOf reads the key for a provider: env var wins, then /run/secrets/<file>.
 func keyOf(name string) string {
 	if v := strings.TrimSpace(os.Getenv(providerEnvVar[name])); v != "" {
 		return v
 	}
-	if b, err := os.ReadFile("/run/secrets/" + name); err == nil {
-		return strings.TrimSpace(string(b))
+	if f, ok := providerSecretFile[name]; ok {
+		if b, err := os.ReadFile("/run/secrets/" + f); err == nil {
+			return strings.TrimSpace(string(b))
+		}
 	}
 	return ""
 }

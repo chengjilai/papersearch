@@ -24,6 +24,7 @@ var freeProviders = []provider{
 	{name: "hal", label: "HAL", search: searchHAL},
 	{name: "inspire", label: "INSPIRE-HEP", search: searchInspire},
 	{name: "zenodo", label: "Zenodo", search: searchZenodo},
+	{name: "osf", label: "OSF (Open Science Framework)", search: searchOSF},
 }
 
 func main() {
@@ -180,7 +181,7 @@ func haveKey(name string) bool {
 func providerNameList() []string {
 	names := []string{"arxiv", "crossref", "openalex", "scholar", "pubmed",
 		"europepmc", "dblp", "datacite", "doaj", "hal", "inspire", "zenodo",
-		"core", "ads", "lens", "springer", "ieee", "gscholar"}
+		"osf", "core", "ads", "lens", "springer", "ieee", "gscholar"}
 	sort.Strings(names)
 	return names
 }
