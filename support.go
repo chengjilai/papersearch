@@ -15,7 +15,7 @@ import (
 // contactEmail identifies the tool to Crossref/OpenAlex polite pools.
 const contactEmail = "chengjilai@sjtu.edu.cn"
 
-// Result is a single search hit, normalized across all providers.
+// One search hit, normalized across providers.
 type Result struct {
 	Source     string   `json:"source"`
 	Title      string   `json:"title"`
@@ -29,7 +29,6 @@ type Result struct {
 	Identifier string   `json:"identifier,omitempty"` // arXiv id, PMID, bibcode, ...
 }
 
-// provider describes one search backend.
 type provider struct {
 	name   string // flag value, e.g. "arxiv"
 	search func(q string, n int, since int) ([]Result, error)
@@ -38,14 +37,13 @@ type provider struct {
 
 var httpClient = &http.Client{Timeout: 20 * time.Second}
 
-// retryCodes are transient failures worth one bounded retry (429 trad, 5xx overloads).
+// Transient failures worth one bounded retry (429 rate-limited, 5xx overloaded).
 func retryCode(code int) bool {
 	return code == 429 || code == 500 || code == 502 || code == 503 || code == 504
 }
 
-// doHTTP sends req, retrying up to retries times (with backoff) on transient
-// failures. Replays the request body only via Clone (nil body for GETs; the
-// POST callers pass retries=0 since their body is consumed once).
+// doHTTP retries transient failures via Clone — safe only for nil-body GETs,
+// so the POST callers pass retries=0 (body is consumed once).
 func doHTTP(req *http.Request, retries int) ([]byte, error) {
 	backoff := []time.Duration{2 * time.Second, 4 * time.Second}
 	for attempt := 0; ; attempt++ {
@@ -125,10 +123,8 @@ func getJSON(endpoint string, out any) error {
 	return json.Unmarshal(body, out)
 }
 
-// qval URL-escapes a search phrase.
 func qval(q string) string { return url.QueryEscape(q) }
 
-// itoa is a dependency-light int->string (avoiding fmt in hot paths).
 func itoa(n int) string {
 	if n == 0 {
 		return "0"
@@ -158,7 +154,7 @@ func (r Result) yearOrNA() string {
 	return itoa(r.Year)
 }
 
-// parseYear extracts the leading 4+ digit year from a date string; 0 if none.
+// First run of digits in a date string is the year (0 if none).
 func parseYear(s string) int {
 	y := 0
 	for _, c := range s {
@@ -177,7 +173,7 @@ func truncate(s string, n int) string {
 	return s[:n-1] + "…"
 }
 
-// collapseSpace replaces runs of whitespace (incl. newlines) with one space.
+// Replace whitespace runs (incl. newlines) with one space.
 func collapseSpace(s string) string {
 	run := false
 	var b strings.Builder
@@ -195,7 +191,7 @@ func collapseSpace(s string) string {
 	return strings.TrimSpace(b.String())
 }
 
-// stripHTML removes HTML tags and trims whitespace (Zenodo/Dryad descriptions).
+// Strip tags/whitespace from HTML descriptions (Zenodo, Dryad).
 func stripHTML(s string) string {
 	var b strings.Builder
 	inTag := false
@@ -212,7 +208,7 @@ func stripHTML(s string) string {
 	return strings.TrimSpace(b.String())
 }
 
-// splitAuthorList splits "A, B, C, and D" author strings (Europe PMC style).
+// Europe PMC author strings arrive as "A, B, C, and D".
 func splitAuthorList(s string) []string {
 	var out []string
 	for _, part := range strings.Split(s, ",") {
@@ -226,7 +222,6 @@ func splitAuthorList(s string) []string {
 	return out
 }
 
-// fmtAuthors renders authors "A, B, C, …" with "+N more" overflow.
 func fmtAuthors(a []string, max int) string {
 	if len(a) == 0 {
 		return ""
@@ -245,7 +240,7 @@ func fmtAuthors(a []string, max int) string {
 	return b.String()
 }
 
-// keyOf reads a keyed provider's credential: env var wins, then /run/secrets/<file>.
+// Credential lookup: env var wins, then /run/secrets/<file>.
 func keyOf(name string) string {
 	if v := strings.TrimSpace(os.Getenv(providerEnvVar[name])); v != "" {
 		return v

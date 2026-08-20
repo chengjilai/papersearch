@@ -47,10 +47,9 @@ type spec struct {
 	search   func(q string, n, since int) ([]Result, error) // bespoke override
 }
 
-// errRateLimited is the canonical message for persistent 429s (Semantic Scholar).
+// Standard error for persistent rate limits (Semantic Scholar).
 var errRateLimited = fmt.Errorf("rate limited by remote service; retry later or provide an API key")
 
-// Credential lookup: env var then /run/secrets, sharing one mapping with keyOf().
 var providerEnvVar = map[string]string{
 	"core": "PAPERSEARCH_CORE_KEY", "ads": "PAPERSEARCH_ADS_TOKEN",
 	"lens": "PAPERSEARCH_LENS_KEY", "springer": "PAPERSEARCH_SPRINGER_KEY",
@@ -424,7 +423,6 @@ var allSpecs = []spec{
 	},
 }
 
-// buildRegistration turns the spec table into provider registries.
 func buildRegistration() (free, keyed []provider) {
 	for _, s := range allSpecs {
 		p := buildProvider(s)
@@ -447,8 +445,7 @@ func buildProvider(s spec) provider {
 	return p
 }
 
-// fetchList runs the generic json/post provider: build endpoint, authenticate,
-// fetch, walk the record array, map each record, apply the since filter.
+// Generic runner for json/post-shaped specs.
 func fetchList(s spec, q string, n, since int) ([]Result, error) {
 	var body []byte
 	if s.postBody != nil {
@@ -478,7 +475,6 @@ func fetchList(s spec, q string, n, since int) ([]Result, error) {
 	return results, nil
 }
 
-// callAPI applies the spec's auth and performs the request.
 func callAPI(s spec, endpoint string, body []byte) ([]byte, error) {
 	key := ""
 	if s.keyed {
@@ -511,9 +507,8 @@ func callAPI(s spec, endpoint string, body []byte) ([]byte, error) {
 // Raw-accessor helpers (shared by every `one` extractor).
 // ----------------------------------------------------------------------------
 
-// at resolves a dot-path within raw JSON (nil for missing). Numeric steps
-// index into arrays: "a.0.b" = b inside the first element of a. Object keys
-// containing dots are not supported (none of the APIs use them).
+// Dot-path lookup; numeric steps index arrays ("a.0.b"). Object keys with
+// dots are not supported (no API uses them).
 func at(raw json.RawMessage, p string) json.RawMessage {
 	cur := raw
 	for _, step := range strings.Split(p, ".") {
@@ -541,7 +536,6 @@ func at(raw json.RawMessage, p string) json.RawMessage {
 	return cur
 }
 
-// str/intv/each/strAll: typed accessors over a record.
 func str(raw json.RawMessage, p string) string { return jstr(at(raw, p)) }
 func intv(raw json.RawMessage, p string) int   { return jint(at(raw, p)) }
 func each(raw json.RawMessage, p string, fn func(json.RawMessage)) {
@@ -566,7 +560,7 @@ func strAll(raw json.RawMessage, p string) []string {
 	return nil
 }
 
-// jstr accepts string, [string] or missing; jint accepts number or "NNNN" string.
+// jstr: string | [string] | missing. jint: number or a string year (e.g. "2017").
 func jstr(v json.RawMessage) string {
 	if len(v) == 0 {
 		return ""

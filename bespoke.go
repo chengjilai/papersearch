@@ -97,7 +97,7 @@ func searchPubMed(q string, n int, since int) ([]Result, error) {
 	return results, nil
 }
 
-// arXiv Atom XML API. Returns preprints with abstracts.
+// arXiv Atom XML API.
 
 type arxivFeed struct {
 	Entry []struct {
@@ -173,7 +173,7 @@ func searchArxiv(q string, n int, since int) ([]Result, error) {
 	return results, nil
 }
 
-// DBLP bibliographic API (computer science). JSON format, CC0 data.
+// DBLP (CS bibliography), CC0 data.
 
 type dblpResp struct {
 	Result struct {
@@ -221,8 +221,6 @@ func searchDblp(q string, n int, since int) ([]Result, error) {
 		if since > 0 && r.Year < since {
 			continue
 		}
-		// DBLP authors field is an array of {text} for many authors, a single
-		// {text} object for one author, or (rarely) a plain string.
 		if len(info.Authors) > 0 {
 			r.Authors = parseDblpAuthors(info.Authors)
 		}
@@ -375,7 +373,7 @@ func parseOpenAIREDocs(body []byte, max int) []openaireDoc {
 	return docs
 }
 
-// Semantic Scholar Graph API. AI-ranked citations; aggressive rate limits.
+// Semantic Scholar Graph API; aggressive rate limits.
 
 type s2Resp struct {
 	Data []struct {

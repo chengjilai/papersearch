@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Registry built from the single allSpecs table in providers.go.
+// Provider registries derived from allSpecs (providers.go).
 var (
 	freeProviders     []provider
 	allKeyedProviders []provider // every keyed spec, gated by haveKey() at dispatch
@@ -166,11 +166,10 @@ func selectProviders(req string) (selected []provider, skipped []string) {
 	return selected, skipped
 }
 
-// haveKey reports whether a keyed provider's credential is resolvable.
-// (Credential names match provider names, so this is just keyOf != "").
+// Credential names match provider names, so this is just keyOf != "".
 func haveKey(name string) bool { return keyOf(name) != "" }
 
-// providerNameList returns the sorted names from the spec table (built in init).
+// Sorted provider names from allSpecs (built in init).
 func providerNameList() []string { return allProviderNames }
 
 func providerNames() string {
@@ -210,8 +209,7 @@ func printTable(provs []provider, results [][]Result, errors []error) {
 	}
 }
 
-// dedupeResults collapses records that describe the same artifact across
-// providers, keyed by lowercase DOI first, then by a normalized title.
+// Collapse cross-provider duplicates of the same artifact (same DOI, else same title).
 func dedupeResults(rs []Result) []Result {
 	type key struct{ doi, title string }
 	seen := make(map[key]bool, len(rs))
