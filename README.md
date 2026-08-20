@@ -1,16 +1,12 @@
-# papersearch
-
-Search 21 academic APIs (15 free, 6 key-gated) from one command; stdlib only.
-
 ```sh
-$ papersearch "attention is all you need"
-$ papersearch -n 10 -since 2023 -json -api arxiv,openalex "multi-agent llm" | jq
-$ papersearch -api all "gravitational waves"
+papersearch "attention is all you need"
+papersearch -n 10 -since 2023 -json -api arxiv,openalex "multi-agent llm" | jq
+papersearch -api all "gravitational waves"
 ```
 
 ## Providers
 
-### Free (15 — on by default)
+### Free
 
 | name | endpoint | covers |
 |---|---|---|
@@ -30,11 +26,11 @@ $ papersearch -api all "gravitational waves"
 | `openaire` | https://api.openaire.eu/search/publications | EU-funded research (XML) |
 | `dryad` | https://datadryad.org/api/v2/search | research datasets |
 
-### Keyed (6 — enabled when the env var is set)
+### Keyed
 
 Env var `PAPERSEARCH_<NAME>_KEY` (ADS uses `..._TOKEN`); without it the provider
 is skipped (`skipped: <name> (set the env key)`). Keys also fall back to
-`/run/secrets/papersearch-<name>` (NixOS credentials).
+`/run/secrets/papersearch-<name>`
 
 | name | env var | endpoint |
 |---|---|---|
@@ -66,13 +62,8 @@ papersearch [flags] "query"
 
 Output is grouped per provider: title, authors, year, venue, citation count, URL.
 A failing provider (e.g. Semantic Scholar rate limits) prints a warning and is
-skipped — the rest still run.
+skipped.
 
-## Build
-
-```sh
-go build -o papersearch .
-```
 
 ## Design
 

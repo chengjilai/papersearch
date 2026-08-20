@@ -68,7 +68,7 @@ func main() {
 	var wg sync.WaitGroup
 	results := make([][]Result, len(provs))
 	errors := make([]error, len(provs))
-	sem := make(chan struct{}, 3) // max 3 concurrent outbound requests
+	sem := make(chan struct{}, len(provs)) // one request per provider; each talks to its own host
 	for i, p := range provs {
 		wg.Add(1)
 		go func(i int, p provider) {
