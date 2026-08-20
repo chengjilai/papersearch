@@ -11,22 +11,20 @@ import (
 	"time"
 )
 
+// Free (no-key) providers: the 9 explicit ones plus the 6 data-driven
+// docProviders registered in init() from api_rest.go.
 var freeProviders = []provider{
 	{name: "arxiv", label: "arXiv", search: searchArxiv},
-	{name: "crossref", label: "Crossref", search: searchCrossref},
-	{name: "openalex", label: "OpenAlex", search: searchOpenAlex},
 	{name: "scholar", label: "Semantic Scholar", search: searchScholar},
 	{name: "pubmed", label: "PubMed", search: searchPubMed},
-	{name: "europepmc", label: "Europe PMC", search: searchEuropePMC},
 	{name: "dblp", label: "DBLP", search: searchDblp},
-	{name: "datacite", label: "DataCite", search: searchDataCite},
-	{name: "doaj", label: "DOAJ", search: searchDOAJ},
-	{name: "hal", label: "HAL", search: searchHAL},
-	{name: "inspire", label: "INSPIRE-HEP", search: searchInspire},
-	{name: "zenodo", label: "Zenodo", search: searchZenodo},
-	{name: "osf", label: "OSF (Open Science Framework)", search: searchOSF},
 	{name: "openaire", label: "OpenAIRE (EU research)", search: searchOpenAIRE},
-	{name: "dryad", label: "Dryad (research datasets)", search: searchDryad},
+}
+
+func init() {
+	for _, d := range docProviders {
+		freeProviders = append(freeProviders, provider{name: d.name, label: d.label, search: docSearch(d)})
+	}
 }
 
 func main() {
