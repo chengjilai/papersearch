@@ -34,11 +34,11 @@ const (
 )
 
 type spec struct {
-	name, label string
-	auth        authKind
-	secret      string // keyOf() credential name (== provider name when keyed)
-	keyParam    string // query param name for authKeyParam
-	keyed       bool   // enabled only when its credential exists
+	name     string
+	auth     authKind
+	secret   string // keyOf() credential name (== provider name when keyed)
+	keyParam string // query param name for authKeyParam
+	keyed    bool   // enabled only when its credential exists
 
 	url      func(q string, n, since int) string            // endpoint (json/post)
 	postBody func(q string, n, since int) []byte            // authPostBearer only
@@ -67,13 +67,13 @@ var serpYearRe = regexp.MustCompile(`\b(19|20)\d{2}\b`)
 
 var allSpecs = []spec{
 	// ---- free (15) -------------------------------------------------------
-	{name: "arxiv", label: "arXiv", search: searchArxiv},
-	{name: "scholar", label: "Semantic Scholar", search: searchScholar},
-	{name: "pubmed", label: "PubMed", search: searchPubMed},
-	{name: "dblp", label: "DBLP", search: searchDblp},
-	{name: "openaire", label: "OpenAIRE (EU research)", search: searchOpenAIRE},
+	{name: "arxiv", search: searchArxiv},
+	{name: "scholar", search: searchScholar},
+	{name: "pubmed", search: searchPubMed},
+	{name: "dblp", search: searchDblp},
+	{name: "openaire", search: searchOpenAIRE},
 
-	{name: "crossref", label: "Crossref", sel: "message.items",
+	{name: "crossref", sel: "message.items",
 		url: func(q string, n, since int) string {
 			e := "https://api.crossref.org/works?query=" + qval(q) + "&rows=" + itoa(n) +
 				"&mailto=" + contactEmail + "&select=DOI,title,author,container-title,published"
@@ -96,7 +96,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "openalex", label: "OpenAlex", sel: "results",
+	{name: "openalex", sel: "results",
 		url: func(q string, n, since int) string {
 			e := "https://api.openalex.org/works?search=" + qval(q) + "&per-page=" + itoa(n) +
 				"&mailto=" + contactEmail + "&select=id,display_name,publication_year,doi,cited_by_count,authorships,primary_location,abstract_inverted_index"
@@ -118,7 +118,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "datacite", label: "DataCite", sel: "data",
+	{name: "datacite", sel: "data",
 		url: func(q string, n, since int) string {
 			return "https://api.datacite.org/dois?query=" + qval(q) + "&page[size]=" + itoa(n)
 		},
@@ -141,7 +141,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "doaj", label: "DOAJ", sel: "results",
+	{name: "doaj", sel: "results",
 		url: func(q string, n, since int) string {
 			return "https://doaj.org/api/v3/search/articles/" + qval(q) + "?pageSize=" + itoa(n)
 		},
@@ -163,7 +163,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "osf", label: "OSF (Open Science Framework)", sel: "data",
+	{name: "osf", sel: "data",
 		url: func(q string, n, since int) string {
 			return "https://api.osf.io/v2/nodes/?search=" + qval(q) + "&page[size]=" + itoa(n)
 		},
@@ -173,7 +173,7 @@ var allSpecs = []spec{
 				Year: parseYear(str(raw, "attributes.date_created"))}
 		},
 	},
-	{name: "dryad", label: "Dryad (research datasets)", sel: "_embedded.stash:datasets",
+	{name: "dryad", sel: "_embedded.stash:datasets",
 		url: func(q string, n, since int) string {
 			return "https://datadryad.org/api/v2/search?q=" + qval(q) + "&limit=" + itoa(n)
 		},
@@ -192,7 +192,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "europepmc", label: "Europe PMC", sel: "resultList.result",
+	{name: "europepmc", sel: "resultList.result",
 		url: func(q string, n, since int) string {
 			query := q
 			if since > 0 {
@@ -212,7 +212,7 @@ var allSpecs = []spec{
 			}
 		},
 	},
-	{name: "hal", label: "HAL", sel: "response.docs",
+	{name: "hal", sel: "response.docs",
 		url: func(q string, n, since int) string {
 			return "https://api.archives-ouvertes.fr/search/?q=" + qval(q) + "&wt=json&rows=" + itoa(n) +
 				"&fl=title_s,uri_s,producedDate_s,doiId_s,authFullName_s,citedBy_s,journalTitle_s"
@@ -223,7 +223,7 @@ var allSpecs = []spec{
 				Authors: strAll(raw, "authFullName_s"), Year: parseYear(str(raw, "producedDate_s"))}
 		},
 	},
-	{name: "inspire", label: "INSPIRE-HEP", sel: "hits.hits",
+	{name: "inspire", sel: "hits.hits",
 		url: func(q string, n, since int) string {
 			query := q
 			if since > 0 {
@@ -254,7 +254,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "zenodo", label: "Zenodo", sel: "hits.hits",
+	{name: "zenodo", sel: "hits.hits",
 		url: func(q string, n, since int) string {
 			query := q
 			if since > 0 {
@@ -279,7 +279,7 @@ var allSpecs = []spec{
 	},
 
 	// ---- keyed (6; enabled when the credential exists) ---------------------
-	{name: "core", label: "CORE (full-text aggregator)", keyed: true, auth: authBearer, secret: "core", sel: "results",
+	{name: "core", keyed: true, auth: authBearer, secret: "core", sel: "results",
 		url: func(q string, n, since int) string {
 			return "https://api.core.ac.uk/v3/search/works?q=" + qval(q) + "&limit=" + itoa(n)
 		},
@@ -292,7 +292,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "ads", label: "NASA ADS / SciX (astrophysics)", keyed: true, auth: authBearer, secret: "ads", sel: "response.docs",
+	{name: "ads", keyed: true, auth: authBearer, secret: "ads", sel: "response.docs",
 		url: func(q string, n, since int) string {
 			e := "https://api.adsabs.harvard.edu/v1/search/query?q=" + qval(q) +
 				"&rows=" + itoa(n) + "&fl=title,author,year,doi,bibcode,citation_count,abstract"
@@ -311,7 +311,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "springer", label: "Springer Nature", keyed: true, auth: authKeyParam, secret: "springer", keyParam: "api_key", sel: "records",
+	{name: "springer", keyed: true, auth: authKeyParam, secret: "springer", keyParam: "api_key", sel: "records",
 		url: func(q string, n, since int) string {
 			e := "https://api.springernature.com/meta/v2/json?q=" + qval(q) + "&p=" + itoa(n)
 			if since > 0 {
@@ -329,7 +329,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "ieee", label: "IEEE Xplore", keyed: true, auth: authKeyParam, secret: "ieee", keyParam: "apikey", sel: "articles",
+	{name: "ieee", keyed: true, auth: authKeyParam, secret: "ieee", keyParam: "apikey", sel: "articles",
 		url: func(q string, n, since int) string {
 			e := "https://ieeexploreapi.ieee.org/api/v1/search/articles?querytext=" + qval(q) +
 				"&max_records=" + itoa(n) + "&format=json"
@@ -353,7 +353,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "gscholar", label: "Google Scholar (via SerpAPI)", keyed: true, auth: authKeyParam, secret: "gscholar",
+	{name: "gscholar", keyed: true, auth: authKeyParam, secret: "gscholar",
 		keyParam: "api_key", sel: "organic_results",
 		url: func(q string, n, since int) string {
 			return "https://serpapi.com/search.json?engine=google_scholar&q=" + qval(q) + "&num=" + itoa(n)
@@ -384,7 +384,7 @@ var allSpecs = []spec{
 			return r
 		},
 	},
-	{name: "lens", label: "Lens.org (scholarly + patents)", keyed: true, auth: authPostBearer, secret: "lens", sel: "data",
+	{name: "lens", keyed: true, auth: authPostBearer, secret: "lens", sel: "data",
 		url: func(q string, n, since int) string {
 			return "https://api.lens.org/scholarly/search"
 		},
@@ -438,7 +438,7 @@ func buildRegistration() (free, keyed []provider) {
 }
 
 func buildProvider(s spec) provider {
-	p := provider{name: s.name, label: s.label, keyed: s.keyed}
+	p := provider{name: s.name, keyed: s.keyed}
 	if s.search != nil {
 		p.search = s.search
 		return p
@@ -465,7 +465,7 @@ func fetchList(s spec, q string, n, since int) ([]Result, error) {
 	arr := at(root, s.sel)
 	var records []json.RawMessage
 	if len(arr) > 0 && json.Unmarshal(arr, &records) != nil {
-		return nil, fmt.Errorf("%s: record selector %q is not an array", s.label, s.sel)
+		return nil, fmt.Errorf("%s: record selector %q is not an array", s.name, s.sel)
 	}
 	results := make([]Result, 0, len(records))
 	for _, rec := range records {

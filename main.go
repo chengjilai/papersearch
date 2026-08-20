@@ -43,10 +43,10 @@ func main() {
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nProviders:\n")
 		for _, p := range freeProviders {
-			fmt.Fprintf(os.Stderr, "  %-10s %s\n", p.name, p.label)
+			fmt.Fprintln(os.Stderr, "  "+p.name)
 		}
 		for _, p := range allKeyedProviders {
-			fmt.Fprintf(os.Stderr, "  %-10s %s (keyed: PAPERSEARCH_<NAME>_KEY)\n", p.name, p.label)
+			fmt.Fprintln(os.Stderr, "  "+p.name+"  (keyed: PAPERSEARCH_<NAME>_KEY)")
 		}
 	}
 	flag.Parse()
@@ -86,7 +86,7 @@ func main() {
 		if errors[i] != nil {
 			totalErr++
 			if !*quiet {
-				fmt.Fprintf(os.Stderr, "warning: %s: %v\n", p.label, errors[i])
+				fmt.Fprintf(os.Stderr, "warning: %s: %v\n", p.name, errors[i])
 			}
 			continue
 		}
@@ -182,7 +182,7 @@ func printTable(provs []provider, results [][]Result, errors []error) {
 		if errors[i] != nil || len(results[i]) == 0 {
 			continue
 		}
-		fmt.Printf("\n=== %s (%d) ===\n", p.label, len(results[i]))
+		fmt.Printf("\n=== %s (%d) ===\n", p.name, len(results[i]))
 		for j, r := range results[i] {
 			fmt.Printf("  %2d. %s\n", j+1, r.Title)
 			meta := ""

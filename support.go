@@ -32,7 +32,6 @@ type Result struct {
 // provider describes one search backend.
 type provider struct {
 	name   string // flag value, e.g. "arxiv"
-	label  string // display name for output
 	search func(q string, n int, since int) ([]Result, error)
 	keyed  bool // enabled only when its env key / /run/secrets file is present
 }
