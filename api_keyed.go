@@ -102,11 +102,11 @@ type adsResp struct {
 		Docs []struct {
 			Title         []string `json:"title"`
 			Author        []string `json:"author"`
-			Year          []int    `json:"year"`
+			Year          string   `json:"year"`
 			DOI           []string `json:"doi"`
 			Bibcode       string   `json:"bibcode"`
 			CitationCount int      `json:"citation_count"`
-			Abstract      []string `json:"abstract"`
+			Abstract      string   `json:"abstract"`
 		} `json:"docs"`
 	} `json:"response"`
 }
@@ -138,14 +138,14 @@ func searchADS(q string, n int, since int, key string) ([]Result, error) {
 		if len(d.Author) > 0 {
 			r.Authors = d.Author
 		}
-		if len(d.Year) > 0 {
-			r.Year = d.Year[0]
+		if y, err := atoiSafe(d.Year); err == nil && y > 0 {
+			r.Year = y
 		}
 		if len(d.DOI) > 0 {
 			r.DOI = d.DOI[0]
 		}
-		if len(d.Abstract) > 0 {
-			r.Abstract = d.Abstract[0]
+		if d.Abstract != "" {
+			r.Abstract = d.Abstract
 		}
 		if d.Bibcode != "" {
 			r.URL = "https://ui.adsabs.harvard.edu/abs/" + d.Bibcode + "/abstract"
