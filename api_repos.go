@@ -68,9 +68,10 @@ func parseOpenAIREDocs(body []byte, max int) []openaireDoc {
 		switch t := tok.(type) {
 		case xml.StartElement:
 			lastTag = t.Name.Local
-			if t.Name.Local == "result" {
+			switch t.Name.Local {
+			case "result":
 				cur = &openaireDoc{}
-			} else if t.Name.Local == "pid" {
+			case "pid":
 				pidClass = ""
 				for _, a := range t.Attr {
 					if a.Name.Local == "classid" || a.Name.Local == "classname" {

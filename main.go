@@ -113,7 +113,10 @@ func main() {
 		}
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		enc.Encode(all)
+		if err := enc.Encode(all); err != nil {
+			fmt.Fprintln(os.Stderr, "papersearch: encode:", err)
+			os.Exit(1)
+		}
 		return
 	}
 

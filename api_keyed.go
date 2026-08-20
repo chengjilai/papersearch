@@ -30,17 +30,6 @@ var providerEnvVar = map[string]string{
 	"gscholar": "PAPERSEARCH_SERPAPI_KEY",
 }
 
-// keyedProviders returns the subset of keyed providers whose env key is set.
-func keyedProviders() []provider {
-	var out []provider
-	for _, p := range allKeyedProviders {
-		if haveKey(p.name) {
-			out = append(out, p)
-		}
-	}
-	return out
-}
-
 // keySearch wraps a key-arg search func to read the key from the right env var.
 func keySearch(fn func(string, int, int, string) ([]Result, error), getKey func() string) func(string, int, int) ([]Result, error) {
 	return func(q string, n int, since int) ([]Result, error) {

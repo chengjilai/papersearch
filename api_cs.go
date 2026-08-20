@@ -58,7 +58,7 @@ func searchArxiv(q string, n int, since int) ([]Result, error) {
 		if len(e.Published) >= 4 {
 			year = e.Published[:4]
 		}
-		fmt.Sscanf(year, "%d", &r.Year)
+		r.Year = parseYear(year)
 		for _, a := range e.Authors {
 			r.Authors = append(r.Authors, a.Name)
 		}

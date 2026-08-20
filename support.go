@@ -62,7 +62,7 @@ func doHTTP(req *http.Request, retries int) ([]byte, error) {
 		}
 		if err == nil {
 			body, rerr := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if rerr != nil {
 				return nil, rerr
 			}
@@ -236,7 +236,7 @@ func fmtAuthors(a []string, max int) string {
 	var b strings.Builder
 	for i, name := range a {
 		if i == max {
-			b.WriteString(fmt.Sprintf("… +%d more", len(a)-max))
+			fmt.Fprintf(&b, "… +%d more", len(a)-max)
 			break
 		}
 		if i > 0 {
