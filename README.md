@@ -1,6 +1,6 @@
 # papersearch
 
-Search scholarly literature across **18 APIs** — all free or key-gated (no paid
+Search scholarly literature across **21 APIs** — all free or key-gated (no paid
 subscriptions) — from one Go command, using only the standard library.
 
 ```
@@ -10,6 +10,8 @@ $ papersearch -json -api openalex "protein folding" | jq '.[0]'
 ```
 
 ## Providers
+
+Counts: 15 free/no-key + 6 key-gated = 21.
 
 ### Free, no key (12 — all enabled by default)
 
@@ -27,6 +29,9 @@ $ papersearch -json -api openalex "protein folding" | jq '.[0]'
 | `hal` | HAL | https://api.archives-ouvertes.fr/search | French open archive |
 | `inspire` | INSPIRE-HEP | https://inspirehep.net/api/literature | high-energy physics |
 | `zenodo` | Zenodo | https://zenodo.org/api/records | CERN research data + preprints |
+| `osf` | OSF | https://api.osf.io/v2/nodes | open science projects/preprints (Center for Open Science) |
+| `openaire` | OpenAIRE | https://api.openaire.eu/search/publications | EU-funded research (XML) |
+| `dryad` | Dryad | https://datadryad.org/api/v2/search | research datasets (Dryad repository) |
 
 ### Free but key-gated (5 — enabled via env var)
 

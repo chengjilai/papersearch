@@ -25,11 +25,13 @@ var freeProviders = []provider{
 	{name: "inspire", label: "INSPIRE-HEP", search: searchInspire},
 	{name: "zenodo", label: "Zenodo", search: searchZenodo},
 	{name: "osf", label: "OSF (Open Science Framework)", search: searchOSF},
+	{name: "openaire", label: "OpenAIRE (EU research)", search: searchOpenAIRE},
+	{name: "dryad", label: "Dryad (research datasets)", search: searchDryad},
 }
 
 func main() {
 	var (
-		apiList = flag.String("api", "arxiv,crossref,openalex,scholar,pubmed,europepmc,dblp,datacite,doaj,hal,inspire,zenodo",
+		apiList = flag.String("api", "arxiv,crossref,openalex,scholar,pubmed,europepmc,dblp,datacite,doaj,hal,inspire,zenodo,osf,openaire,dryad",
 			"comma-separated providers, or 'all'. Names: "+providerNames())
 		n       = flag.Int("n", 5, "max results per provider")
 		since   = flag.Int("since", 0, "only papers from this year onward")
@@ -181,7 +183,7 @@ func haveKey(name string) bool {
 func providerNameList() []string {
 	names := []string{"arxiv", "crossref", "openalex", "scholar", "pubmed",
 		"europepmc", "dblp", "datacite", "doaj", "hal", "inspire", "zenodo",
-		"osf", "core", "ads", "lens", "springer", "ieee", "gscholar"}
+		"osf", "openaire", "dryad", "core", "ads", "lens", "springer", "ieee", "gscholar"}
 	sort.Strings(names)
 	return names
 }
