@@ -23,6 +23,16 @@ var allKeyedProviders = []provider{
 	{name: "gscholar", label: "Google Scholar (via SerpAPI)", keyed: true, search: keySearch(searchGoogleScholar, keySerpAPI)},
 }
 
+// providerEnvVar maps provider name -> env var, e.g. core -> PAPERSEARCH_CORE_KEY.
+var providerEnvVar = map[string]string{
+	"core":     "PAPERSEARCH_CORE_KEY",
+	"ads":      "PAPERSEARCH_ADS_TOKEN",
+	"lens":     "PAPERSEARCH_LENS_KEY",
+	"springer": "PAPERSEARCH_SPRINGER_KEY",
+	"ieee":     "PAPERSEARCH_IEEE_KEY",
+	"gscholar": "PAPERSEARCH_SERPAPI_KEY",
+}
+
 // keyedProviders returns the subset of keyed providers whose env key is set.
 func keyedProviders() []provider {
 	var out []provider
@@ -41,12 +51,23 @@ func keySearch(fn func(string, int, int, string) ([]Result, error), getKey func(
 	}
 }
 
-func keyCORE() string     { return strings.TrimSpace(os.Getenv("PAPERSEARCH_CORE_KEY")) }
-func keySerpAPI() string  { return strings.TrimSpace(os.Getenv("PAPERSEARCH_SERPAPI_KEY")) }
-func keyADS() string      { return strings.TrimSpace(os.Getenv("PAPERSEARCH_ADS_TOKEN")) }
-func keyLens() string     { return strings.TrimSpace(os.Getenv("PAPERSEARCH_LENS_KEY")) }
-func keySpringer() string { return strings.TrimSpace(os.Getenv("PAPERSEARCH_SPRINGER_KEY")) }
-func keyIEEE() string     { return strings.TrimSpace(os.Getenv("PAPERSEARCH_IEEE_KEY")) }
+// keyOf reads the key for a provider: env var wins, then /run/secrets/<name>.
+func keyOf(name string) string {
+	if v := strings.TrimSpace(os.Getenv(providerEnvVar[name])); v != "" {
+		return v
+	}
+	if b, err := os.ReadFile("/run/secrets/" + name); err == nil {
+		return strings.TrimSpace(string(b))
+	}
+	return ""
+}
+
+func keyCORE() string     { return keyOf("core") }
+func keySerpAPI() string  { return keyOf("gscholar") }
+func keyADS() string      { return keyOf("ads") }
+func keyLens() string     { return keyOf("lens") }
+func keySpringer() string { return keyOf("springer") }
+func keyIEEE() string     { return keyOf("ieee") }
 
 var errRateLimited = fmt.Errorf("rate limited by remote service; retry later or provide an API key")
 
