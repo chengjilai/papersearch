@@ -1,7 +1,7 @@
 # papersearch
 
-Search scholarly literature across **17 APIs** from one Go command — no external Go
-dependencies, just the standard library.
+Search scholarly literature across **17 APIs** — all free or key-gated (no paid
+subscriptions) — from one Go command, using only the standard library.
 
 ```
 $ papersearch "attention is all you need"
@@ -41,13 +41,10 @@ key, the tool prints `skipped: <name> (set the env key)` and continues.
 | `springer` | `PAPERSEARCH_SPRINGER_KEY` | https://api.springernature.com/meta/v2/json |
 | `ieee` | `PAPERSEARCH_IEEE_KEY` | https://ieeexploreapi.ieee.org/api/v1/search/articles |
 
-### No public API / not keyword-searchable (documented)
+### Not keyword-searchable (documented; free, no key)
 
 - **Google Scholar** — has *no official API* at all; unpaid access is scraping
-  only (ToS violation, CAPTCHA-blocked from datacenter IPs). Paid proxies exist
-  (SerpAPI etc.). Not implemented.
-- **Scopus** (Elsevier), **Web of Science / InCites** (Clarivate), **Dimensions**
-  (Digital Science), **ScienceDirect**, **Wiley** — commercial subscriptions.
+  only (ToS violation, CAPTCHA-blocked from datacenter IPs). Not implemented.
 - **OpenCitations** — citations/metadata lookup *by DOI* (https://api.opencitations.net),
   no keyword search.
 - **Unpaywall** — full-text availability lookup *by DOI* (https://api.unpaywall.org/v2/:doi?email=).
