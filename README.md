@@ -1,5 +1,5 @@
 ```sh
-go install github
+go install github.com/chengjilai/papersearch@latest
 ```
 
 ## Usage
