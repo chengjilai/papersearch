@@ -404,7 +404,19 @@ func searchScholar(q string, n int, since int) ([]Result, error) {
 	}
 
 	var resp s2Resp
-	if err := getJSON(endpoint, &resp); err != nil {
+	// Semantic Scholar works without a key but is aggressively rate limited;
+	// PAPERSEARCH_SCHOLAR_KEY raises the quota and is sent as x-api-key.
+	var raw []byte
+	var err error
+	if key := keyOf("scholar"); key != "" {
+		raw, err = getRawWithHeader(endpoint, "x-api-key", key)
+	} else {
+		raw, err = getRaw(endpoint)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(raw, &resp); err != nil {
 		return nil, err
 	}
 	if resp.Code == "429" || strings.Contains(resp.Message, "Too Many Requests") {

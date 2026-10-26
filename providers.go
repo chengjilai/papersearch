@@ -54,12 +54,14 @@ var providerEnvVar = map[string]string{
 	"core": "PAPERSEARCH_CORE_KEY", "ads": "PAPERSEARCH_ADS_TOKEN",
 	"lens": "PAPERSEARCH_LENS_KEY", "springer": "PAPERSEARCH_SPRINGER_KEY",
 	"ieee": "PAPERSEARCH_IEEE_KEY", "gscholar": "PAPERSEARCH_SERPAPI_KEY",
+	"scholar": "PAPERSEARCH_SCHOLAR_KEY", // optional: Semantic Scholar key raises the rate limit
 }
 
 var providerSecretFile = map[string]string{
 	"core": "papersearch-core-key", "ads": "papersearch-ads-token",
 	"lens": "papersearch-lens-key", "springer": "papersearch-springer-key",
 	"ieee": "papersearch-ieee-key", "gscholar": "papersearch-serpapi-key",
+	"scholar": "papersearch-scholar-key",
 }
 
 var serpYearRe = regexp.MustCompile(`\b(19|20)\d{2}\b`)
