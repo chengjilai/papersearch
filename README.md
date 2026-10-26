@@ -49,6 +49,13 @@ Env var `PAPERSEARCH_<NAME>_KEY` (ADS uses `..._TOKEN`); without it the provider
 is skipped (`skipped: <name> (set the env key)`). Keys also fall back to
 `/run/secrets/papersearch-<name>`
 
+`scholar` (Semantic Scholar) is the exception: it is a free provider and runs
+without a key, but the anonymous quota is small and shared per IP, so it often
+returns `429`. Set `PAPERSEARCH_SCHOLAR_KEY` (free key from
+https://www.semanticscholar.org/product/api#api-key-form) and the same provider
+sends it as `x-api-key`, which raises the quota and also makes the
+`citationCount` field reliable.
+
 | name | env var | endpoint |
 |---|---|---|
 | `core` | `PAPERSEARCH_CORE_KEY` | https://api.core.ac.uk/v3/search/works |
@@ -57,6 +64,7 @@ is skipped (`skipped: <name> (set the env key)`). Keys also fall back to
 | `springer` | `PAPERSEARCH_SPRINGER_KEY` | https://api.springernature.com/meta/v2/json |
 | `ieee` | `PAPERSEARCH_IEEE_KEY` | https://ieeexploreapi.ieee.org/api/v1/search/articles |
 | `gscholar` | `PAPERSEARCH_SERPAPI_KEY` | https://serpapi.com/search.json (engine=google_scholar) — Google Scholar, since it has no API; paid quota |
+| `scholar` | `PAPERSEARCH_SCHOLAR_KEY` (optional) | https://api.semanticscholar.org/graph/v1/paper/search — works without a key; the key only raises the rate limit |
 
 ## Design
 

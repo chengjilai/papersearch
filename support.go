@@ -88,6 +88,18 @@ func getRaw(endpoint string) ([]byte, error) {
 	return doHTTP(req, 1)
 }
 
+// getRawWithHeader is getRaw with a single extra header, used by providers
+// that authenticate with a vendor-specific header (Semantic Scholar: x-api-key).
+func getRawWithHeader(endpoint, header, value string) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "papersearch/0.1 (mailto:"+contactEmail+")")
+	req.Header.Set(header, value)
+	return doHTTP(req, 1)
+}
+
 func getRawWithBearer(endpoint, token string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
