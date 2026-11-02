@@ -1,3 +1,3 @@
-module github.com/chengjilai/persearch
+module github.com/chengjilai/papersearch
 
 go 1.27
